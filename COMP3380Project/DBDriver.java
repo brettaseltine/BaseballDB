@@ -31,8 +31,11 @@ class BaseballDB {
 
     // runs the DB (incomplete)
     public void run() {
+        queryTeamSQLTest();
         queryTeamPitchingSQLTest();
         queryTeamBattingSQLTest();
+        queryTeamFieldingSQLTest();
+        queryManagerSQLTest();
     }
 
     // Connect to your database.
@@ -101,8 +104,8 @@ class BaseballDB {
     private void populateDB() {
         try {
             System.out.println("Populating the DB...");
-            statement.execute(getPopulateDBSql());
-            System.out.println("Population Successful!");
+            statement.execute(populateDBSql());
+            System.out.println("Population Complete!");
         }
         catch(Exception e) {
             //e.printStackTrace();
@@ -112,16 +115,18 @@ class BaseballDB {
         
     }
 
-    private String getPopulateDBSql() {
+    private String populateDBSql() {
         String res = "";
-        res += getPopulateDivisionSQL();
-        res += getPopulateTeamsSQL();
-        res += getPopulateTeamPitchingSQL();
-        res += getPopulateTeamBattingSQL();
+        res += populateDivisionSQL();
+        res += populateTeamsSQL();
+        res += populateTeamPitchingSQL();
+        res += populateTeamBattingSQL();
+        res += populateTeamFieldingSQL();
+        res += populateManagerSQL();
         return res;
     }
 
-    private String getPopulateDivisionSQL() {
+    private String populateDivisionSQL() {
         return "INSERT INTO division (divisionName, abbreviation) VALUES('American League East', 'ALE')\n" +
         "INSERT INTO division (divisionName, abbreviation) VALUES('American League Central', 'ALC')\n" +
         "INSERT INTO division (divisionName, abbreviation) VALUES('American League West', 'ALW')\n" +
@@ -130,7 +135,7 @@ class BaseballDB {
         "INSERT INTO division (divisionName, abbreviation) VALUES('National League West', 'NLW')\n";
     }
 
-    private String getPopulateTeamsSQL() {
+    private String populateTeamsSQL() {
         try{
             String insertSql = "";
             ArrayList<String> teamLine = new ArrayList<>();
@@ -144,7 +149,7 @@ class BaseballDB {
                     continue;
                 }
                 String[] teamInfo = teamLine.get(i).split(",");
-                insertSql += String.format("INSERT INTO team (teamName, city, divisionName) VALUES('%s', '%s', '%s')\n", teamInfo[1], teamInfo[2], league+" "+teamInfo[0]);
+                insertSql += String.format("INSERT INTO team (teamName, abbrev, city, divisionName) VALUES('%s', '%s', '%s', '%s')\n", teamInfo[1], teamInfo[2], teamInfo[3], league+" "+teamInfo[0]);
             }
             return insertSql;
         } 
@@ -154,7 +159,7 @@ class BaseballDB {
         }
     }
 
-    private String getPopulateTeamPitchingSQL() {
+    private String populateTeamPitchingSQL() {
         try {
             String insertSql = "";
             ArrayList<String> tpsLine = new ArrayList<>();
@@ -174,7 +179,7 @@ class BaseballDB {
         }
     }
 
-    private String getPopulateTeamBattingSQL() {
+    private String populateTeamBattingSQL() {
         try {
             String insertSql = "";
             ArrayList<String> tbsLine = new ArrayList<>();
@@ -194,7 +199,66 @@ class BaseballDB {
         }
     }
 
+    private String populateTeamFieldingSQL() {
+        try {
+            String insertSql = "";
+            ArrayList<String> tfsLine = new ArrayList<>();
+            Scanner s = new Scanner(new File("./3380ProjectData/TeamFielding.csv"));
+            while(s.hasNextLine()) tfsLine.add(s.nextLine());
+
+            String outline = "INSERT INTO teamFieldingStats (totalPutouts, totalAssists, totalErrors, doublePlays, teamName) VALUES('%d', '%d', '%d', '%d', '%s')\n";
+            for(int i = 1; i < tfsLine.size(); i++) {
+                String[] tfsInfo = tfsLine.get(i).split(",");
+                insertSql += String.format(outline, stoi(tfsInfo[9]), stoi(tfsInfo[10]), stoi(tfsInfo[11]), stoi(tfsInfo[12]), tfsInfo[0]);
+            }
+            return insertSql;
+        }
+        catch(Exception e) {
+            System.out.println("Unable to load TeamFielding table");
+            return null;
+        }
+    }
+
+    private String populateManagerSQL() {
+        try {
+            String insertSql = "";
+            ArrayList<String> managerLine = new ArrayList<>();
+            Scanner s = new Scanner(new File("./3380ProjectData/Managers.csv"));
+            while(s.hasNextLine()) managerLine.add(s.nextLine());
+
+            String outline = "INSERT INTO manager (managerName, ejections, challanges, overturned, teamAbbrev) VALUES('%s', '%d', '%d', '%d', '%s')\n";
+            for(int i = 1; i < managerLine.size(); i++) {
+                String[] managerInfo = managerLine.get(i).split(",");
+                insertSql += String.format(outline, managerInfo[1], stoi(managerInfo[15]), stoi(managerInfo[12]), stoi(managerInfo[13]), managerInfo[2]);
+            }
+            return insertSql;
+        }
+        catch(Exception e) {
+            System.out.println("Unable to load Manager table");
+            // e.printStackTrace();
+            return null;
+        }
+    }
+
     // RUN QUERY METHODS
+    private void queryTeamSQLTest() {
+        System.out.println("\nTeam Query\n");
+        try {
+            // Create and execute a SELECT SQL statement.
+            String selectSql = "SELECT teamName, abbrev from team;";
+            ResultSet resultSet = statement.executeQuery(selectSql);
+
+            // Print results from select statement
+            System.out.println("TeamName\t\t\tAbbreviation");    // testing line
+            while (resultSet.next()) {
+                System.out.printf("%s\t\t\t%s\n", resultSet.getString("teamName"), resultSet.getString("abbrev"));
+            }
+        }
+        catch(Exception e) {
+            System.out.println("query failed");
+        }
+    }
+
     private void queryTeamPitchingSQLTest() {
         System.out.println("\nTeam Pitching Query\n");
         try {
@@ -229,6 +293,43 @@ class BaseballDB {
         }
         catch(Exception e) {
             System.out.println("query failed");
+        }
+    }
+
+    private void queryTeamFieldingSQLTest() {
+        System.out.println("\nTeam Fielding Query\n");
+        try {
+            // Create and execute a SELECT SQL statement.
+            String selectSql = "SELECT teamName, totalErrors from teamFieldingStats;";
+            ResultSet resultSet = statement.executeQuery(selectSql);
+
+            // Print results from select statement
+            System.out.println("TeamName\t\t\ttotalErrors");    // testing line
+            while (resultSet.next()) {
+                System.out.printf("%s\t\t\t%s\n", resultSet.getString("teamName"), resultSet.getString("totalErrors"));
+            }
+        }
+        catch(Exception e) {
+            System.out.println("query failed");
+        }
+    }
+
+    private void queryManagerSQLTest() {
+        System.out.println("\nManager Query\n");
+        try {
+            // Create and execute a SELECT SQL statement.
+            String selectSql = "SELECT managerName, teamAbbrev from manager;";
+            ResultSet resultSet = statement.executeQuery(selectSql);
+
+            // Print results from select statement
+            System.out.println("Name\t\t\tTeam Abbrev");    // testing line
+            while (resultSet.next()) {
+                System.out.printf("%s\t\t\t%s\n", resultSet.getString("managerName"), resultSet.getString("teamAbbrev"));
+            }
+        }
+        catch(Exception e) {
+            System.out.println("query failed");
+            e.printStackTrace();
         }
     }
 

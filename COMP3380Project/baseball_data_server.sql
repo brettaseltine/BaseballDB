@@ -26,6 +26,7 @@ create table division (
 
 create table team (
     teamName varchar(100) primary key,
+    abbrev text not null,
     city text not null,
     divisionName varchar(50) references division(divisionName)
 );
@@ -104,5 +105,5 @@ create table manager (
     ejections integer not null,
     challanges integer not null,
     overturned integer not null,
-    teamName varchar(100) references team(teamName)
+    teamAbbrev varchar(10)
 );
