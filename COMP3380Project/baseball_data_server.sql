@@ -33,8 +33,8 @@ create table team (
 
 create table player (
     playerID integer primary key IDENTITY(1,1),
-    age integer not null,
-    name text not null
+    name text not null,
+    age integer not null
 );
 
 create table playsOn (
@@ -45,15 +45,15 @@ create table playsOn (
 
 create table pitchingStats (
     pitchingStatsID integer primary key IDENTITY(1,1),
-    teamName text not null,
+    teamAbbrev text not null,
     gamesPlayed integer not null,
     hitsAllowed integer not null,
     hrAllowed integer not null,
     walksAllowed integer not null,
     strikeOuts integer not null,
-    inningsPitched integer not null,
+    inningsPitched float not null,
     earnedRuns integer not null,
-    playerID integer references player(playerID)
+    playerID integer not null references player(playerID)
 );
 
 create table battingStats (
@@ -61,7 +61,7 @@ create table battingStats (
     hrHit integer not null,
     hits integer not null,
     atBats integer not null,
-    playerID integer references player(playerID)
+    playerID integer not null references player(playerID)
 );
 
 create table fieldingStats (
@@ -69,7 +69,7 @@ create table fieldingStats (
     putouts integer not null,
     assists integer not null,
     errors integer not null,
-    playerID integer references player(playerID)
+    playerID integer not null references player(playerID)
 );
 
 create table teamPitchingStats (
