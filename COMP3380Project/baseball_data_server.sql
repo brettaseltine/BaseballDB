@@ -25,7 +25,8 @@ create table division (
 );
 
 create table team (
-    teamName varchar(100) primary key,
+    teamID integer primary key IDENTITY(1,1),
+    teamName text not null,
     abbrev text not null,
     city text not null,
     divisionName varchar(50) references division(divisionName)
@@ -39,8 +40,8 @@ create table player (
 
 create table playsOn (
     playerID integer references player(playerID),
-    teamName varchar(100) references team(teamName),
-    primary key (playerID, teamName)
+    teamID integer references team(teamID),
+    primary key (playerID, teamID)
 );
 
 create table pitchingStats (
@@ -80,7 +81,7 @@ create table teamPitchingStats (
     totalWalksAllowed integer not null,
     totalHRAllowed integer not null,
     totalHitsAllowed integer not null,
-    teamName varchar(100) references team(teamName)
+    teamID integer not null references team(teamID)
 );
 
 create table teamBattingStats (
@@ -88,7 +89,7 @@ create table teamBattingStats (
     totalHR integer not null,
     totalHits integer not null,
     totalAB integer not null,
-    teamName varchar(100) references team(teamName)
+    teamID integer not null references team(teamID)
 );
 
 create table teamFieldingStats (
@@ -97,7 +98,7 @@ create table teamFieldingStats (
     totalAssists integer not null,
     totalErrors integer not null,
     doublePlays integer not null,
-    teamName varchar(100) references team(teamName)
+    teamID integer not null references team(teamID)
 );
 
 create table manager (
@@ -105,5 +106,5 @@ create table manager (
     ejections integer not null,
     challanges integer not null,
     overturned integer not null,
-    teamAbbrev varchar(10)
+    teamID integer not null references team(teamID)
 );

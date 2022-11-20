@@ -21,12 +21,17 @@ class BaseballDB {
 
     Connection connection;
     Statement statement;
+    Map<String, Integer> playerMap;
+    Map<String, Integer> teamMap;
 
     // constructor
     public BaseballDB() {
+        playerMap = new HashMap<>();
+        teamMap = new HashMap<>();
+
         connect();
-        //createDB();
-        //populateDB();
+        createDB();
+        populateDB();
     }
 
     // runs the DB (incomplete)
@@ -36,10 +41,11 @@ class BaseballDB {
         queryTeamBattingTest();
         queryTeamFieldingTest();
         queryManagerTest();
-        // queryPlayerTest();
-        // queryPitchingStatsTest();
+        queryPlayerTest();
+        queryPitchingStatsTest();
         queryBattingStatsTest();
         queryFieldingStatsTest();
+        queryPlaysOnTest();
     }
 
     // Connect to your database.
@@ -98,7 +104,7 @@ class BaseballDB {
             System.out.println("Creation Successful!");
         }
         catch(Exception e) {
-            //e.printStackTrace();
+            e.printStackTrace();
             System.out.println("Unable to create DB. Quitting...");
             System.exit(0);
         }
@@ -118,7 +124,7 @@ class BaseballDB {
         populateBattingStats();
         populateFieldingStats();
         populatePlaysOn();
-        System.out.println("Population Complete!");
+        System.out.printf("Population Complete!");
         
     }
 
@@ -152,6 +158,7 @@ class BaseballDB {
                 insertSql += String.format("INSERT INTO team (teamName, abbrev, city, divisionName) VALUES('%s', '%s', '%s', '%s')\n", teamInfo[1], teamInfo[2], teamInfo[3], league+" "+teamInfo[0]);
             }
             statement.execute(insertSql);
+            // save the id
         } 
         catch(Exception e) {
             System.out.println("Unable to load Team table");
@@ -163,15 +170,17 @@ class BaseballDB {
             String insertSql = "";
             ArrayList<String> tpsLine = getFileLines("./3380ProjectData/TeamPitching.csv");
 
-            String outline = "INSERT INTO teamPitchingStats (totalIP, totalER, totalStrikeOuts, totalWalksAllowed, totalHRAllowed, totalHitsAllowed, teamName) VALUES('%f', '%d', '%d', '%d', '%d', '%d', '%s')\n";
+            String outline = "INSERT INTO teamPitchingStats (totalIP, totalER, totalStrikeOuts, totalWalksAllowed, totalHRAllowed, totalHitsAllowed, teamID) VALUES('%f', '%d', '%d', '%d', '%d', '%d', '%d')\n";
             for(int i = 1; i < tpsLine.size(); i++) {
                 String[] tpsInfo = tpsLine.get(i).split(",");
-                insertSql += String.format(outline, stof(tpsInfo[15]), stoi(tpsInfo[18]), stoi(tpsInfo[22]), stoi(tpsInfo[20]), stoi(tpsInfo[19]), stoi(tpsInfo[16]), tpsInfo[0]);
+                int teamID = getTeamID(tpsInfo[0]);
+                insertSql += String.format(outline, stof(tpsInfo[15]), stoi(tpsInfo[18]), stoi(tpsInfo[22]), stoi(tpsInfo[20]), stoi(tpsInfo[19]), stoi(tpsInfo[16]), teamID);
             }
             statement.execute(insertSql);
         }
         catch(Exception e) {
             System.out.println("Unable to load TeamPitching table");
+            e.printStackTrace();
         }
     }
 
@@ -180,10 +189,11 @@ class BaseballDB {
             String insertSql = "";
             ArrayList<String> tbsLine = getFileLines("./3380ProjectData/TeamBatting.csv");
 
-            String outline = "INSERT INTO teamBattingStats (totalHR, totalHits, totalAB, teamName) VALUES('%d', '%d', '%d', '%s')\n";
+            String outline = "INSERT INTO teamBattingStats (totalHR, totalHits, totalAB, teamID) VALUES('%d', '%d', '%d', '%d')\n";
             for(int i = 1; i < tbsLine.size(); i++) {
                 String[] tbsInfo = tbsLine.get(i).split(",");
-                insertSql += String.format(outline, stoi(tbsInfo[11]), stoi(tbsInfo[8]), stoi(tbsInfo[6]), tbsInfo[0]);
+                int teamID = getTeamID(tbsInfo[0]);
+                insertSql += String.format(outline, stoi(tbsInfo[11]), stoi(tbsInfo[8]), stoi(tbsInfo[6]), teamID);
             }
             statement.execute(insertSql);
         }
@@ -197,10 +207,11 @@ class BaseballDB {
             String insertSql = "";
             ArrayList<String> tfsLine = getFileLines("./3380ProjectData/TeamFielding.csv");
 
-            String outline = "INSERT INTO teamFieldingStats (totalPutouts, totalAssists, totalErrors, doublePlays, teamName) VALUES('%d', '%d', '%d', '%d', '%s')\n";
+            String outline = "INSERT INTO teamFieldingStats (totalPutouts, totalAssists, totalErrors, doublePlays, teamID) VALUES('%d', '%d', '%d', '%d', '%d')\n";
             for(int i = 1; i < tfsLine.size(); i++) {
                 String[] tfsInfo = tfsLine.get(i).split(",");
-                insertSql += String.format(outline, stoi(tfsInfo[9]), stoi(tfsInfo[10]), stoi(tfsInfo[11]), stoi(tfsInfo[12]), tfsInfo[0]);
+                int teamID = getTeamID(tfsInfo[0]);
+                insertSql += String.format(outline, stoi(tfsInfo[9]), stoi(tfsInfo[10]), stoi(tfsInfo[11]), stoi(tfsInfo[12]), teamID);
             }
             statement.execute(insertSql);
         }
@@ -214,10 +225,11 @@ class BaseballDB {
             String insertSql = "";
             ArrayList<String> managerLine = getFileLines("./3380ProjectData/Managers.csv");
 
-            String outline = "INSERT INTO manager (managerName, ejections, challanges, overturned, teamAbbrev) VALUES('%s', '%d', '%d', '%d', '%s')\n";
+            String outline = "INSERT INTO manager (managerName, ejections, challanges, overturned, teamID) VALUES('%s', '%d', '%d', '%d', '%d')\n";
             for(int i = 1; i < managerLine.size(); i++) {
                 String[] managerInfo = managerLine.get(i).split(",");
-                insertSql += String.format(outline, managerInfo[1], stoi(managerInfo[15]), stoi(managerInfo[12]), stoi(managerInfo[13]), managerInfo[2]);
+                int teamID = getTeamID(managerInfo[2]);
+                insertSql += String.format(outline, managerInfo[1], stoi(managerInfo[15]), stoi(managerInfo[12]), stoi(managerInfo[13]), teamID);
             }
             statement.execute(insertSql);
         }
@@ -234,40 +246,15 @@ class BaseballDB {
             String insertSql = "";
             String outline = "INSERT INTO Player (name, age) VALUES('%s', %d)\n";
 
-            ArrayList<String> batterLines = getFileLines("./3380ProjectData/PlayerBatting.csv");
-            ArrayList<String> pitcherLines = getFileLines("./3380ProjectData/PlayerPitching.csv");
-            ArrayList<String> fielderLines = getFileLines("./3380ProjectData/PlayerFielding.csv");
+            ArrayList<String> pitcher = getFileLines("./3380ProjectData/PlayerPitching.csv");
+            ArrayList<String> batter = getFileLines("./3380ProjectData/PlayerBatting.csv");
+            ArrayList<String> fielder = getFileLines("./3380ProjectData/PlayerFielding.csv");
 
 
             // add batter if not already added
-            for(int i = 1; i < batterLines.size(); i++) {
-                String[] batterInfo = batterLines.get(i).split(",");
-                String name = formatName(batterInfo[1]);
-                if( !playerNames.contains(name) ) {
-                    playerNames.add(name);
-                    insertSql += String.format(outline, name, stoi(batterInfo[2]));
-                }
-            }
-
-            // add pitcher if not already added
-            for(int i = 1; i < pitcherLines.size(); i++) {
-                String[] pitcherInfo = pitcherLines.get(i).split(",");
-                String name = formatName(pitcherInfo[1]);
-                if( !playerNames.contains(name) ){
-                    playerNames.add(name);
-                    insertSql += String.format(outline, name, stoi(pitcherInfo[2]));
-                }
-            }
-
-            // add fielder if not already added
-            for(int i = 1; i < fielderLines.size(); i++) {
-                String[] fielderInfo = fielderLines.get(i).split(",");
-                String name = formatName(fielderInfo[1]);
-                if( !playerNames.contains(name) ){
-                    playerNames.add(name);
-                    insertSql += String.format(outline, name, stoi(fielderInfo[2]));
-                }
-            }
+            insertSql += playerInsertStr(pitcher, playerNames, outline);
+            insertSql += playerInsertStr(batter, playerNames, outline);
+            insertSql += playerInsertStr(fielder, playerNames, outline);
 
             statement.execute(insertSql);
         }
@@ -287,7 +274,7 @@ class BaseballDB {
             for(int i = 1; i < statLine.size(); i++) {
                 String[] statInfo = statLine.get(i).split(",");
                 String name = formatName(statInfo[1]);
-                int playerID = queryPlayerID(name);
+                int playerID = getPlayerID(name);
                 insertSql += String.format(outline, statInfo[3], stoi(statInfo[9]), stoi(statInfo[16]), stoi(statInfo[19]), stoi(statInfo[20]), 
                                                     stoi(statInfo[22]), stof(statInfo[15]), stoi(statInfo[18]), playerID);
             }
@@ -308,7 +295,7 @@ class BaseballDB {
             for(int i = 1; i < statLine.size(); i++) {
                 String[] statInfo = statLine.get(i).split(",");
                 String name = formatName(statInfo[1]);
-                int playerID = queryPlayerID(name);
+                int playerID = getPlayerID(name);
                 insertSql += String.format(outline, stoi(statInfo[12]), stoi(statInfo[9]), stoi(statInfo[7]), playerID);
             }
             statement.execute(insertSql);
@@ -328,7 +315,7 @@ class BaseballDB {
             for(int i = 1; i < statLine.size(); i++) {
                 String[] statInfo = statLine.get(i).split(",");
                 String name = formatName(statInfo[1]);
-                int playerID = queryPlayerID(name);
+                int playerID = getPlayerID(name);
                 insertSql += String.format(outline, stoi(statInfo[10]), stoi(statInfo[11]), stoi(statInfo[12]), playerID);
             }
             statement.execute(insertSql);
@@ -340,7 +327,28 @@ class BaseballDB {
     }
 
     private void populatePlaysOn() {
-        
+        try {
+            // for each player in player files
+                // get playerID from name
+                // get teamID from abbrev
+                // add them to table
+            Set<String> playerNames = new HashSet<>();
+            String insertSql = "";
+            String outline = "INSERT INTO PlaysOn (playerID, teamID) VALUES(%d, %d)\n";
+
+            ArrayList<String> pitchers = getFileLines("./3380ProjectData/PlayerPitching.csv");
+            ArrayList<String> batters = getFileLines("./3380ProjectData/PlayerBatting.csv");
+            ArrayList<String> fielders = getFileLines("./3380ProjectData/PlayerFielding.csv");
+
+            insertSql += playsOnInsertStr(pitchers, playerNames, outline);
+            insertSql += playsOnInsertStr(batters, playerNames, outline);
+            insertSql += playsOnInsertStr(fielders, playerNames, outline);
+
+            statement.execute(insertSql);
+        }
+        catch (Exception e){
+            System.out.println("Unable to populate playsOn table");
+        }
     }
 
     // RUN QUERY METHODS
@@ -366,13 +374,13 @@ class BaseballDB {
         System.out.println("\nTeam Pitching Query\n");
         try {
             // Create and execute a SELECT SQL statement.
-            String selectSql = "SELECT teamName, totalIP from teamPitchingStats;";
+            String selectSql = "SELECT teamID, totalIP from teamPitchingStats;";
             ResultSet resultSet = statement.executeQuery(selectSql);
 
             // Print results from select statement
-            System.out.println("TeamName\t\t\ttotalIP");    // testing line
+            System.out.println("TeamID\t\t\ttotalIP");    // testing line
             while (resultSet.next()) {
-                System.out.printf("%s\t\t\t%s\n", resultSet.getString("teamName"), resultSet.getString("totalIP"));
+                System.out.printf("%d\t\t\t%d\n", resultSet.getInt("teamID"), resultSet.getInt("totalIP"));
             }
         }
         catch(Exception e) {
@@ -385,13 +393,13 @@ class BaseballDB {
         System.out.println("\nTeam Batting Query\n");
         try {
             // Create and execute a SELECT SQL statement.
-            String selectSql = "SELECT teamName, totalHits from teamBattingStats;";
+            String selectSql = "SELECT teamID, totalHits from teamBattingStats;";
             ResultSet resultSet = statement.executeQuery(selectSql);
 
             // Print results from select statement
-            System.out.println("TeamName\t\t\ttotalHits");    // testing line
+            System.out.println("TeamID\t\t\ttotalHits");    // testing line
             while (resultSet.next()) {
-                System.out.printf("%s\t\t\t%s\n", resultSet.getString("teamName"), resultSet.getString("totalHits"));
+                System.out.printf("%d\t\t\t%d\n", resultSet.getInt("teamID"), resultSet.getInt("totalHits"));
             }
         }
         catch(Exception e) {
@@ -403,17 +411,18 @@ class BaseballDB {
         System.out.println("\nTeam Fielding Query\n");
         try {
             // Create and execute a SELECT SQL statement.
-            String selectSql = "SELECT teamName, totalErrors from teamFieldingStats;";
+            String selectSql = "SELECT teamID, totalErrors from teamFieldingStats;";
             ResultSet resultSet = statement.executeQuery(selectSql);
 
             // Print results from select statement
-            System.out.println("TeamName\t\t\ttotalErrors");    // testing line
+            System.out.println("TeamID\t\t\ttotalErrors");    // testing line
             while (resultSet.next()) {
-                System.out.printf("%s\t\t\t%s\n", resultSet.getString("teamName"), resultSet.getString("totalErrors"));
+                System.out.printf("%d\t\t\t%d\n", resultSet.getInt("teamID"), resultSet.getInt("totalErrors"));
             }
         }
         catch(Exception e) {
             System.out.println("query failed");
+            e.printStackTrace();
         }
     }
 
@@ -421,13 +430,13 @@ class BaseballDB {
         System.out.println("\nManager Query\n");
         try {
             // Create and execute a SELECT SQL statement.
-            String selectSql = "SELECT managerName, teamAbbrev from manager;";
+            String selectSql = "SELECT managerName, teamID from manager;";
             ResultSet resultSet = statement.executeQuery(selectSql);
 
             // Print results from select statement
-            System.out.println("Name\t\t\tTeam Abbrev");    // testing line
+            System.out.println("Name\t\t\tTeamID");    // testing line
             while (resultSet.next()) {
-                System.out.printf("%s\t\t\t%s\n", resultSet.getString("managerName"), resultSet.getString("teamAbbrev"));
+                System.out.printf("%s\t\t\t%d\n", resultSet.getString("managerName"), resultSet.getInt("teamID"));
             }
         }
         catch(Exception e) {
@@ -444,7 +453,7 @@ class BaseballDB {
             ResultSet resultSet = statement.executeQuery(selectSql);
 
             // Print results from select statement
-            System.out.println("Name\t\t\tAge");    // testing line
+            System.out.println("playerID\t\t\tName\t\t\tAge");    // testing line
             while (resultSet.next()) {
                 System.out.printf("%d\t\t\t%s\t\t\t%s\n", resultSet.getInt("playerID"), resultSet.getString("name"), resultSet.getInt("age"));
             }
@@ -512,6 +521,27 @@ class BaseballDB {
         }
     }
 
+    private void queryPlaysOnTest() {
+        System.out.println("\nPlaysOn Query\n");
+        try {
+            // Create and execute a SELECT SQL statement.
+            String selectSql = "SELECT name, teamName from playsOn "+
+                                "join player on playsOn.playerID = player.playerID "+
+                                "join team on playsOn.teamID = team.teamID;";
+            ResultSet resultSet = statement.executeQuery(selectSql);
+
+            // Print results from select statement
+            System.out.println("Player Name\t\t\tTeam Name");    // testing line
+            while (resultSet.next()) {
+                System.out.printf("%s\t\t\t%s\n", resultSet.getString("name"), resultSet.getString("teamName"));
+            }
+        }
+        catch(Exception e) {
+            System.out.println("query failed");
+            e.printStackTrace();
+        }
+    }
+
     private int queryPlayerID(String name) {
         try {
             String selectSql = String.format("SELECT playerID from player where CONVERT(VARCHAR(50), player.name) = '%s';", name);    
@@ -520,6 +550,19 @@ class BaseballDB {
         }
         catch(Exception e) {
             System.out.println("Failed to find player with name: " + name);
+            e.printStackTrace();
+            return -1;
+        }
+    }
+
+    private int queryTeamID(String identifier) {
+        try {
+            String selectSql = String.format("SELECT teamID from team where CONVERT(VARCHAR, team.teamName) = '%s' or CONVERT(VARCHAR, team.abbrev) = '%s';", identifier, identifier);    
+            ResultSet resultSet = statement.executeQuery(selectSql);
+            return resultSet.next() ? resultSet.getInt("teamID") : -1;
+        }
+        catch(Exception e) {
+            System.out.println("Failed to find team with name: " + identifier);
             e.printStackTrace();
             return -1;
         }
@@ -556,4 +599,50 @@ class BaseballDB {
         }
         return res;
     }
+    private String playerInsertStr(ArrayList<String> playerType, Set<String> playerNames, String outline) {
+        String res = "";
+        for(int i = 1; i < playerType.size(); i++) {
+            String[] playerInfo = playerType.get(i).split(",");
+            String name = formatName(playerInfo[1]);
+            if( !playerNames.contains(name) ) {
+                playerNames.add(name);
+                res += String.format(outline, name, stoi(playerInfo[2]));
+            }
+        }
+        return res;
+    }
+    private String playsOnInsertStr(ArrayList<String> playerType, Set<String> playerNames, String outline) {
+        String res = "";
+        for(int i = 1; i < playerType.size(); i++) {
+            String[] playerInfo = playerType.get(i).split(",");
+            String name = formatName(playerInfo[1]);
+            if( !playerNames.contains(name) ){
+                playerNames.add(name);
+                int playerID = getPlayerID(name);
+                int teamID = getTeamID(playerInfo[3]);
+                res += String.format(outline, playerID, teamID);
+            }
+        }
+        return res;
+    }
+    // Caching
+    private int getPlayerID(String name) {
+        if(playerMap.containsKey(name)){
+            return playerMap.get(name);
+        } else {
+            int playerID = queryPlayerID(name);
+            playerMap.put(name, playerID);
+            return playerID;
+        }
+    }
+    private int getTeamID(String identifier){
+        if(teamMap.containsKey(identifier)){
+            return teamMap.get(identifier);
+        } else {
+            int teamID = queryTeamID(identifier);
+            teamMap.put(identifier, teamID);
+            return teamID;
+        }
+    }
+
 }
