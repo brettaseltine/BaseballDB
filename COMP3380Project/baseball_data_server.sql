@@ -59,6 +59,7 @@ create table pitchingStats (
 
 create table battingStats (
     battingStatsID integer primary key IDENTITY(1,1),
+    teamAbbrev varchar(100) not null,
     hrHit integer not null,
     hits integer not null,
     atBats integer not null,
@@ -67,6 +68,7 @@ create table battingStats (
 
 create table fieldingStats (
     fieldingStatsID integer primary key IDENTITY(1,1),
+    teamAbbrev varchar(100) not null,
     putouts integer not null,
     assists integer not null,
     errors integer not null,

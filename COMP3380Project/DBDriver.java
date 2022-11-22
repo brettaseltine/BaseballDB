@@ -45,7 +45,7 @@ class BaseballDB {
 		String arg = "";
         String prompt = "MLB DB > ";
 
-        System.out.println("Welcome to the MLB Database! Type h for help. ");
+        System.out.println("Welcome to the 2022 MLB Database! Type h for help. ");
         System.out.print(prompt);
         String line = console.nextLine();
 
@@ -56,11 +56,13 @@ class BaseballDB {
 
 			if (parts[0].equals("h")) {
                 printHelp();
-            } else if (parts[0].equals("t")) {
+            } else if (parts[0].equals("allTeams")) {
 				showTeamInfo();
 			} else if (parts[0].equals("allPlayers")) {
                 showAllPlayers();
-            } else if (parts[0].equals("divs")) {
+            } else if (parts[0].equals("allManagers")) {
+                showAllManagers();
+            } else if (parts[0].equals("allDivs")) {
                 showAllDivision();
             } else if (parts[0].equals("pitchingStats")) {
                 if(parts.length >= 2) {
@@ -68,7 +70,63 @@ class BaseballDB {
                 } else {
                     System.out.println("This command requires an argument");
                 }
-                
+            } else if (parts[0].equals("battingStats")) {
+                if(parts.length >= 2) {
+                    showBattingStats(arg);
+                } else {
+                    System.out.println("This command requires an argument");
+                }
+            } else if (parts[0].equals("fieldingStats")) {
+                if(parts.length >= 2) {
+                    showFieldingStats(arg);
+                } else {
+                    System.out.println("This command requires an argument");
+                }
+            } else if (parts[0].equals("strikeoutsPerInning")) {
+                topTenStrikeoutsPerInning();
+            } else if (parts[0].equals("topHomeRuns")) {
+                topTenHomeRuns();
+            } else if (parts[0].equals("onlyBatted")) {
+                onlyBatted();
+            } else if (parts[0].equals("battedAndPitched")) {
+                battedAndPitched();
+            } else if (parts[0].equals("divisionStats")) {
+                if (parts.length >= 2) {
+                    if (arg.equalsIgnoreCase("fielding")) {
+                        divisionFielding();
+                    } else if (arg.equalsIgnoreCase("batting")) {
+                        divisionBatting();
+                    } else if (arg.equalsIgnoreCase("pitching")) {
+                        divisionPitching();
+                    } else {
+                        System.out.println("not a valid stat type");
+                    }
+                } else {
+                    System.out.println("This command requires an argument");
+                }
+            } else if (parts[0].equals("sameCity")) {
+                sameCity();
+            } else if (parts[0].equals("playOnTeam")) {
+                if (parts.length >= 2) {
+                    playOnTeam(arg);
+                } else {
+                    System.out.println("This command requires an argument");
+                }
+            } else if (parts[0].equals("managerStats")) {
+                if (parts.length >= 2) {
+                    managerStats(arg);
+                } else {
+                    System.out.println("This command requires an argument");
+                }
+            } else if (parts[0].equals("onMultipleTeams")) {
+                onMultipleTeams();
+            } else if (parts[0].equals("teamsOf")) {
+                if(parts.length >= 2) 
+                    teamsOf(arg);
+                else 
+                    System.out.println("This command requires an argument");
+            } else if(parts[0].equals("onMostTeams")) {
+                onMostTeams();
             }
 
 			System.out.print("\n\n"+prompt);
@@ -81,14 +139,30 @@ class BaseballDB {
     private static void printHelp() {
 		System.out.println("Commands:");
 		System.out.println("h - Get help");
-		System.out.println("t - show team information");
+
+		System.out.println("allTeams - show team information");
+        System.out.println("allDivs - show all divisions");
         System.out.println("allPlayers - show all players");
-        System.out.println("divs - show all divisions");
+        System.out.println("allManagers - show all managers");
+
         System.out.println("pitchingStats <playerName> - show players pitching stats");
+        System.out.println("battingStats <playerName> - show players batting stats");
+        System.out.println("fieldingStats <playerName> - show players fielding stats");
+        System.out.println("managerStats <managerName> - shows the stats of a manager");
 
+        System.out.println("strikeoutsPerInning - show the teams with the top 10 strikeouts/inning");
+        System.out.println("topHomeRuns - shows the players with the top 10 home runs");
+        System.out.println("onlyBatted - show the names of players that have only batted");
+        System.out.println("battedAndPitched - show players that have both batted and pitched");
+        System.out.println("divisionStats <pitching/batting/fielding> - shows a stat catagory by division");
+        System.out.println("sameCity - displays all teams that played in the same city as another team");
+        System.out.println("playOnTeam <teamName> - shows all players that play on a team");
+        System.out.println("onMultipleTeams - shows players that have played on multiple teams");
+        System.out.println("teamsOf <playerName> - shows all teams this player played for");
+        System.out.println("onMostTeams - shows 10 players who played on the most teams");
+        
 		
-		System.out.println("");
-
+		System.out.println();
 		System.out.println("q - Exit the program");
 		System.out.println("---- end help ----- ");
 	}
@@ -336,12 +410,12 @@ class BaseballDB {
             String insertSql = "";
             ArrayList<String> statLine = getFileLines("./3380ProjectData/PlayerBatting.csv");
 
-            String outline = "INSERT INTO battingStats (hrHit, hits, atBats, playerID) VALUES('%d', '%d', '%d', '%d')\n";
+            String outline = "INSERT INTO battingStats (teamAbbrev, hrHit, hits, atBats, playerID) VALUES('%s', '%d', '%d', '%d', '%d')\n";
             for(int i = 1; i < statLine.size(); i++) {
                 String[] statInfo = statLine.get(i).split(",");
                 String name = formatName(statInfo[1]);
                 int playerID = getPlayerID(name);
-                insertSql += String.format(outline, stoi(statInfo[12]), stoi(statInfo[9]), stoi(statInfo[7]), playerID);
+                insertSql += String.format(outline, statInfo[3], stoi(statInfo[12]), stoi(statInfo[9]), stoi(statInfo[7]), playerID);
             }
             statement.execute(insertSql);
         }
@@ -356,12 +430,12 @@ class BaseballDB {
             String insertSql = "";
             ArrayList<String> statLine = getFileLines("./3380ProjectData/PlayerFielding.csv");
 
-            String outline = "INSERT INTO fieldingStats (putouts, assists, errors, playerID) VALUES('%d', '%d', '%d', '%d')\n";
+            String outline = "INSERT INTO fieldingStats (teamAbbrev, putouts, assists, errors, playerID) VALUES('%s', '%d', '%d', '%d', '%d')\n";
             for(int i = 1; i < statLine.size(); i++) {
                 String[] statInfo = statLine.get(i).split(",");
                 String name = formatName(statInfo[1]);
                 int playerID = getPlayerID(name);
-                insertSql += String.format(outline, stoi(statInfo[10]), stoi(statInfo[11]), stoi(statInfo[12]), playerID);
+                insertSql += String.format(outline, statInfo[3], stoi(statInfo[10]), stoi(statInfo[11]), stoi(statInfo[12]), playerID);
             }
             statement.execute(insertSql);
         }
@@ -373,11 +447,7 @@ class BaseballDB {
 
     private void populatePlaysOn() {
         try {
-            // for each player in player files
-                // get playerID from name
-                // get teamID from abbrev
-                // add them to table
-            Set<String> playerNames = new HashSet<>();
+            Set<String> seen = new HashSet<>();
             String insertSql = "";
             String outline = "INSERT INTO PlaysOn (playerID, teamID) VALUES(%d, %d)\n";
 
@@ -385,9 +455,9 @@ class BaseballDB {
             ArrayList<String> batters = getFileLines("./3380ProjectData/PlayerBatting.csv");
             ArrayList<String> fielders = getFileLines("./3380ProjectData/PlayerFielding.csv");
 
-            insertSql += playsOnInsertStr(pitchers, playerNames, outline);
-            insertSql += playsOnInsertStr(batters, playerNames, outline);
-            insertSql += playsOnInsertStr(fielders, playerNames, outline);
+            insertSql += playsOnInsertStr(pitchers, seen, outline);
+            insertSql += playsOnInsertStr(batters, seen, outline);
+            insertSql += playsOnInsertStr(fielders, seen, outline);
 
             statement.execute(insertSql);
         }
@@ -648,6 +718,27 @@ class BaseballDB {
             e.printStackTrace();
         }
     }
+    private void showAllManagers() {
+        try {
+            // Create and execute a SELECT SQL statement.
+            String selectSql = "select managerName, teamName, ejections, challanges, overturned from manager join team on manager.teamID = team.teamID";
+            ResultSet resultSet = statement.executeQuery(selectSql);
+
+            // Print results from select statement
+            // Print results from select statement
+            System.out.printf("%-32s %-30s %-15s %-15s %-15s\n", "Manager Name", "Team Name", "Ejections", "Challanges",
+                    "Overturned");
+            while (resultSet.next()) {
+                System.out.printf("%-32s %-30s %-15s %-15s %-15s\n", resultSet.getString("managerName"),
+                        resultSet.getString("teamName"), resultSet.getString("ejections"),
+                        resultSet.getString("challanges"),
+                        resultSet.getString("overturned"));
+            }
+        } catch (Exception e) {
+            System.out.println("query failed");
+            e.printStackTrace();
+        }
+    }
     private void showAllDivision() {
         try {
             // Create and execute a SELECT SQL statement.
@@ -676,12 +767,14 @@ class BaseballDB {
             System.out.printf("%-35s %-5s %-15s %-15s %-15s %-15s %-15s %-15s %-15s\n",
                              "Name", "Team", "Games Played", "Hits Allowed", "HR Allowed", "Walks Allowed", "Strike Outs", "IP", "ER");
             if (resultSet.next()) {
-                System.out.printf("%-35s %-5s %-15d %-15d %-15d %-15d %-15d %-15d %-15d\n", 
-                    resultSet.getString("name"), resultSet.getString("teamAbbrev"), resultSet.getInt("gamesPlayed"),
-                    resultSet.getInt("hitsAllowed"), resultSet.getInt("hrAllowed"), resultSet.getInt("walksAllowed"),
-                    resultSet.getInt("strikeOuts"), resultSet.getInt("inningsPitched"), resultSet.getInt("earnedRuns"));
+                do {
+                    System.out.printf("%-35s %-5s %-15d %-15d %-15d %-15d %-15d %-15d %-15d\n", 
+                        resultSet.getString("name"), resultSet.getString("teamAbbrev"), resultSet.getInt("gamesPlayed"),
+                        resultSet.getInt("hitsAllowed"), resultSet.getInt("hrAllowed"), resultSet.getInt("walksAllowed"),
+                        resultSet.getInt("strikeOuts"), resultSet.getInt("inningsPitched"), resultSet.getInt("earnedRuns"));
+                } while(resultSet.next());
             } else {
-                System.out.println("Player not found");
+                System.out.println("No pitching stats found for "+name);
             }
         }
         catch(Exception e) {
@@ -689,7 +782,296 @@ class BaseballDB {
             e.printStackTrace();
         }
     }
+    private void showBattingStats(String name) {
+        try {
+            // Create and execute a SELECT SQL statement.
+            String selectSql = String.format("select player.name, teamAbbrev, hrHit, hits, atBats from battingStats "+
+            "join player on battingStats.playerID = player.playerID where player.name = '%s';", name);
+            ResultSet resultSet = statement.executeQuery(selectSql);
 
+            // Print results from select statement
+            System.out.printf("%-35s %-5s %-15s %-15s %-15s\n",
+                             "Name", "Team", "HR Hit", "Hits", "At Bats");
+            if (resultSet.next()) {
+                do {
+                    System.out.printf("%-35s %-5s %-15d %-15d %-15d\n", 
+                        resultSet.getString("name"), resultSet.getString("teamAbbrev"), resultSet.getInt("hrHit"),
+                        resultSet.getInt("hits"), resultSet.getInt("atBats"));
+                } while(resultSet.next());
+            } else {
+                System.out.println("No batting stats found for "+name);
+            }
+        }
+        catch(Exception e) {
+            System.out.println("query failed");
+            e.printStackTrace();
+        }
+    }
+    private void showFieldingStats(String name) {
+        try {
+            // Create and execute a SELECT SQL statement.
+            String selectSql = String.format("select player.name, teamAbbrev, putouts, assists, errors from fieldingStats "+
+            "join player on fieldingStats.playerID = player.playerID where player.name = '%s';", name);
+            ResultSet resultSet = statement.executeQuery(selectSql);
+
+            // Print results from select statement
+            System.out.printf("%-35s %-5s %-15s %-15s %-15s\n",
+                             "Name", "Team", "Putouts", "Assists", "Errors");
+            if (resultSet.next()) {
+                do {
+                    System.out.printf("%-35s %-5s %-15d %-15d %-15d\n", 
+                        resultSet.getString("name"), resultSet.getString("teamAbbrev"), resultSet.getInt("putouts"),
+                        resultSet.getInt("assists"), resultSet.getInt("errors"));
+                } while(resultSet.next());
+            } else {
+                System.out.println("No fielding stats found for "+name);
+            }
+        }
+        catch(Exception e) {
+            System.out.println("query failed");
+            e.printStackTrace();
+        }
+    }
+    private void topTenStrikeoutsPerInning() {
+        try {
+            // create and execute a select sql statement
+            String selectSql = "select teamName, round(cast(totalStrikeOuts as float)/cast(totalIP as float), 3) as strikeoutsPerInning from teamPitchingStats join team on teamPitchingStats.teamID = team.teamID order by totalStrikeOuts/totalIP DESC";
+            ResultSet resultSet = statement.executeQuery(selectSql);
+
+            // print the results from the select statement, only show top 10 rows
+            System.out.printf("%-25s %-20s\n", "Team Name", "Strikeouts/Inning");
+            int count = 0; // count how many rows have been shown
+            while (resultSet.next() && count < 10) {
+                System.out.printf("%-25s %-20s\n", resultSet.getString("teamName"),
+                        resultSet.getString("strikeoutsPerInning"));
+                count++;
+            }
+        } catch (Exception e) {
+            System.out.println("query failed");
+            e.printStackTrace();
+        }
+    }
+    private void topTenHomeRuns() {
+        try {
+            // create and execute a select sql statement
+            String selectSql = "select name, hrHit from battingStats join player on battingStats.playerID = player.playerID order by hrHit DESC;";
+            ResultSet resultSet = statement.executeQuery(selectSql);
+
+            System.out.printf("%-32s %-20s\n", "Player Name", "Home Runs");
+            int count = 0; // count how many rows have been shown
+            while (resultSet.next() && count < 10) {
+                System.out.printf("%-32s %-20s\n", resultSet.getString("name"),
+                        resultSet.getString("hrHit"));
+                count++;
+            }
+        } catch (Exception e) {
+            System.out.println("query failed");
+            e.printStackTrace();
+        }
+    }
+    private void onlyBatted() {
+        try {
+            // create and execute a select sql statement
+            String selectSql = "select DISTINCT name from battingStats join player on battingStats.playerID = player.playerID where name not in (select DISTINCT name from fieldingStats join player on fieldingStats.playerID = player.playerID) and name not in (select DISTINCT name from pitchingStats join player on pitchingStats.playerID = player.playerID);";
+            ResultSet resultSet = statement.executeQuery(selectSql);
+
+            System.out.printf("%-32s\n", "Player Name");
+            while (resultSet.next()) {
+                System.out.printf("%-32s\n", resultSet.getString("name"));
+            }
+        } catch (Exception e) {
+            System.out.println("query failed");
+            e.printStackTrace();
+        }
+    }
+    private void battedAndPitched() {
+        try {
+            // create and execute a select sql statement
+            String selectSql = "select distinct name from battingStats join pitchingStats on pitchingStats.playerID = battingStats.playerID join player on battingStats.playerID = player.playerID "+
+                                "where battingStats.atBats > 0 and pitchingStats.inningsPitched > 0;";
+            ResultSet resultSet = statement.executeQuery(selectSql);
+
+            System.out.printf("%-32s\n", "Player Name");
+            while (resultSet.next()) {
+                System.out.printf("%-32s\n", resultSet.getString("name"));
+            }
+        } catch (Exception e) {
+            System.out.println("query failed");
+            e.printStackTrace();
+        }
+    }
+    private void divisionPitching() {
+        try {
+            // create and execute a select sql statement
+            String selectSql = "select divisionName, round(avg(totalIP), 2) as divTotalIP, round(avg(totalER), 2) as divTotalER, round(avg(totalStrikeOuts), 2) as divtotalStrikeOuts, round(avg(totalWalksAllowed), 2) as divTotalWalksAllowed, round(avg(totalHRAllowed), 2) as divtotalHRAllowed, round(avg(totalHitsAllowed), 2) as divTotalHitsAllowed from team join teamPitchingStats on team.teamID = teamPitchingStats.teamID group by divisionName;";
+            ResultSet resultSet = statement.executeQuery(selectSql);
+
+            System.out.printf("%-30s %-15s %-15s %-20s %-25s %-25s %-25s\n", "Division Name", "divTotalIP",
+                    "divTotalER", "divtotalStrikeOuts", "divTotalWalksAllowed", "divtotalHRAllowed",
+                    "divTotalHitsAllowed");
+            while (resultSet.next()) {
+                System.out.printf("%-30s %-15s %-15s %-20s %-25s %-25s %-25s\n", resultSet.getString("divisionName"),
+                        resultSet.getString("divTotalIP"),
+                        resultSet.getString("divTotalER"), resultSet.getString("divtotalStrikeOuts"),
+                        resultSet.getString("divTotalWalksAllowed"), resultSet.getString("divtotalHRAllowed"),
+                        resultSet.getString("divTotalHitsAllowed"));
+            }
+        } catch (Exception e) {
+            System.out.println("query failed");
+            e.printStackTrace();
+        }
+    }
+    private void divisionBatting() {
+        try {
+            // create and execute a select sql statement
+            String selectSql = "select divisionName, round(avg(totalHR), 2) as divTotalHR, round(avg(totalHits), 2) as divTotalHits, round(avg(totalAB), 2) as divTotalAB from team join teamBattingStats on team.teamID = teamBattingStats.teamID group by divisionName;";
+            ResultSet resultSet = statement.executeQuery(selectSql);
+
+            System.out.printf("%-30s %-15s %-15s %-15s\n", "Division Name", "divTotalHR",
+                    "divTotalHits", "divTotalAB");
+            while (resultSet.next()) {
+                System.out.printf("%-30s %-15s %-15s %-15s\n", resultSet.getString("divisionName"),
+                        resultSet.getString("divTotalHR"), resultSet.getString("divTotalHits"),
+                        resultSet.getString("divTotalAB"));
+            }
+        } catch (Exception e) {
+            System.out.println("query failed");
+            e.printStackTrace();
+        }
+    }
+    private void divisionFielding() {
+        try {
+            // create and execute a select sql statement
+            String selectSql = "select divisionName, round(avg(totalPutouts), 2) as divTotalPutouts, round(avg(totalAssists), 2) as divTotalAssists, round(avg(totalErrors), 2) as divTotalErrors, round(avg(doublePlays), 2) as divDoublePlays from team join teamFieldingStats on team.teamID = teamFieldingStats.teamID group by divisionName;";
+            ResultSet resultSet = statement.executeQuery(selectSql);
+
+            System.out.printf("%-30s %-20s %-20s %-20s %-20s\n", "Division Name", "divTotalPutouts",
+                    "divTotalAssists", "divTotalErrors", "divDoublePlays");
+            while (resultSet.next()) {
+                System.out.printf("%-30s %-20s %-20s %-20s %-20s\n", resultSet.getString("divisionName"),
+                        resultSet.getString("divTotalPutouts"), resultSet.getString("divTotalAssists"),
+                        resultSet.getString("divTotalErrors"), resultSet.getString("divDoublePlays"));
+            }
+        } catch (Exception e) {
+            System.out.println("query failed");
+            e.printStackTrace();
+        }
+    }
+    private void sameCity() {
+        try {
+            // Create and execute a SELECT SQL statement.
+            String selectSql = "select teamName, city from team where city in (select city from team group by city having count(teamName) > 1) order by city;";
+            ResultSet resultSet = statement.executeQuery(selectSql);
+
+            // Print results from select statement
+            System.out.printf("%-30s %-20s\n", "Team Name", "City");
+            while (resultSet.next()) {
+                System.out.printf("%-30s %-20s\n", resultSet.getString("teamName"), resultSet.getString("city"));
+            }
+        } catch (Exception e) {
+            System.out.println("query failed");
+            // e.printStackTrace();
+        }
+    }
+    private void playOnTeam(String teamName) {
+        try {
+            // Create and execute a SELECT SQL statement.
+            String selectSql = String.format(
+                    "select name from playsOn join player on playsOn.playerID = player.playerID join team on playsOn.teamID = team.teamID where teamName = '%s' order by name;",
+                    teamName);
+            ResultSet resultSet = statement.executeQuery(selectSql);
+
+            // Print results from select statement
+            System.out.printf("%-32s\n", "Player Name");
+            while (resultSet.next()) {
+                System.out.printf("%-32s\n", resultSet.getString("name"));
+            }
+        } catch (Exception e) {
+            System.out.println("query failed");
+            // e.printStackTrace();
+        }
+    }
+    private void managerStats(String managerName) {
+        try {
+            // Create and execute a SELECT SQL statement.
+            String selectSql = String.format(
+                    "select managerName, teamName, ejections, challanges, overturned from manager join team on manager.teamID = team.teamID where managerName = '%s';",
+                    managerName);
+            ResultSet resultSet = statement.executeQuery(selectSql);
+
+            // Print results from select statement
+            System.out.printf("%-32s %-30s %-15s %-15s %-15s\n", "Manager Name", "Team Name", "Ejections", "Challanges",
+                    "Overturned");
+            if (resultSet.next()) {
+                System.out.printf("%-32s %-30s %-15s %-15s %-15s\n", resultSet.getString("managerName"),
+                        resultSet.getString("teamName"), resultSet.getString("ejections"),
+                        resultSet.getString("challanges"),
+                        resultSet.getString("overturned"));
+            }
+            else {
+                System.out.println(managerName+" not found!");
+            }
+        } catch (Exception e) {
+            System.out.println("query failed");
+            // e.printStackTrace();
+        }
+    }
+    private void onMultipleTeams() {
+        try {
+            // Create and execute a SELECT SQL statement.
+            String selectSql = "select DISTINCT name from player join playsOn on player.playerID = playsOn.playerID "+
+                               "group by name having count(teamID) > 1 order by name;";
+            ResultSet resultSet = statement.executeQuery(selectSql);
+
+            // Print results from select statement
+            System.out.println("Player Name");
+            while (resultSet.next()) {
+                System.out.println(resultSet.getString("name"));
+            }
+        } catch (Exception e) {
+            System.out.println("query failed");
+            // e.printStackTrace();
+        }
+    }
+    private void teamsOf(String name) {
+        try {
+            // Create and execute a SELECT SQL statement.
+            String selectSql = String.format("select name, teamName from playsOn join player on playsOn.playerID = player.playerID "+
+                               "join team on playsOn.teamID = team.teamID where player.name = '%s' order by name;", name);
+            ResultSet resultSet = statement.executeQuery(selectSql);
+
+            // Print results from select statement
+            System.out.printf("%-32s %-30s\n", "Player Name", "Team Name");
+            if (resultSet.next()) {
+                do {
+                    System.out.printf("%-32s %-30s\n", resultSet.getString("name"), resultSet.getString("teamName"));
+                } while(resultSet.next());
+            } else {
+                System.out.println(name+" not found");
+            }
+        } catch (Exception e) {
+            System.out.println("query failed");
+            // e.printStackTrace();
+        }
+    }
+    private void onMostTeams() {
+        try {
+            // Create and execute a SELECT SQL statement.
+            String selectSql = "SELECT TOP 10 name, count(teamID) as teamsOn from player join playsOn on player.playerID = playsOn.playerID "+
+                                "group by name order by teamsOn desc;";
+            ResultSet resultSet = statement.executeQuery(selectSql);
+
+            // Print results from select statement
+            System.out.printf("%-32s %-30s\n", "Player Name", "Team Played On");
+            while(resultSet.next()) {
+                System.out.printf("%-32s %d\n", resultSet.getString("name"), resultSet.getInt("teamsOn"));
+            }
+        } catch (Exception e) {
+            System.out.println("query failed");
+            e.printStackTrace();
+        }
+        
+    }
 
     // Helper Methods
     private int stoi(String s) {
@@ -720,29 +1102,27 @@ class BaseballDB {
             if(Character.isLetter(c) || c == ' ')
                 res += c;
         }
-        return res;
+        return res.trim();
     }
     private String playerInsertStr(ArrayList<String> playerType, Set<String> playerNames, String outline) {
         String res = "";
         for(int i = 1; i < playerType.size(); i++) {
             String[] playerInfo = playerType.get(i).split(",");
             String name = formatName(playerInfo[1]);
-            if( !playerNames.contains(name) ) {
-                playerNames.add(name);
+            if( playerNames.add(name) ) {
                 res += String.format(outline, name, stoi(playerInfo[2]));
             }
         }
         return res;
     }
-    private String playsOnInsertStr(ArrayList<String> playerType, Set<String> playerNames, String outline) {
+    private String playsOnInsertStr(ArrayList<String> playerType, Set<String> seen, String outline) {
         String res = "";
         for(int i = 1; i < playerType.size(); i++) {
             String[] playerInfo = playerType.get(i).split(",");
             String name = formatName(playerInfo[1]);
-            if( !playerNames.contains(name) ){
-                playerNames.add(name);
-                int playerID = getPlayerID(name);
-                int teamID = getTeamID(playerInfo[3]);
+            int playerID = getPlayerID(name);
+            int teamID = getTeamID(playerInfo[3]);
+            if(seen.add(name+teamID)){
                 res += String.format(outline, playerID, teamID);
             }
         }
