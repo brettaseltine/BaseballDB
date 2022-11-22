@@ -21,20 +21,20 @@ drop table if exists division;
 
 create table division (
     divisionName varchar(50) primary key,
-    abbreviation text
+    abbreviation varchar(100)
 );
 
 create table team (
     teamID integer primary key IDENTITY(1,1),
-    teamName text not null,
-    abbrev text not null,
-    city text not null,
+    teamName varchar(100) not null,
+    abbrev varchar(100) not null,
+    city varchar(100) not null,
     divisionName varchar(50) references division(divisionName)
 );
 
 create table player (
     playerID integer primary key IDENTITY(1,1),
-    name text not null,
+    name varchar(100) not null,
     age integer not null
 );
 
@@ -46,7 +46,7 @@ create table playsOn (
 
 create table pitchingStats (
     pitchingStatsID integer primary key IDENTITY(1,1),
-    teamAbbrev text not null,
+    teamAbbrev varchar(100) not null,
     gamesPlayed integer not null,
     hitsAllowed integer not null,
     hrAllowed integer not null,

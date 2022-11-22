@@ -7,99 +7,13 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Scanner;
 import java.util.*;
 
 public class DBDriver {
     
     public static void main(String[] args) {
         BaseballDB bdb = new BaseballDB();
-        Scanner scan = new Scanner(System.in)
-        int state = 0, request;
-        while (state != 3) {
-                while (state == 0) {
-                    System.out.println("Please enter a number 1, 2, 3, 4 or 5 to:");
-                    System.out.println("1 - Display the team-based search options.");
-                    System.out.println("2 - Display the player-based search options.");
-                    System.out.println("3 - Display the list of players with their respective teams.");
-                    System.out.println("4 - Display the list of managers with the IDs of their respective teams.");
-                    System.out.println("5 - Exit the program.");
-                    request = scan.nextInt();
-                    switch (request) {
-                        case 1:
-                        state = 1;    
-                        break;    
-                        case 2:
-                        state = 2;    
-                        break;
-                        case 3:
-                        queryPlaysOnTest();
-                        break;
-                        case 4:
-                        queryManagerTest();
-                        break;
-                        case 5:
-                        state = 3;
-                        break;
-                        case default:
-                        System.out.println("Please enter a valid number.");
-                    }
-                }
-                while (state == 1) {
-                    System.out.println("Please enter a number 1, 2, 3, 4 or 5 to:");
-                    System.out.println("1 - Display every player's ID, name and age.");
-                    System.out.println("2 - Display every player's pitching stats.");
-                    System.out.println("3 - Display every player's batting stats.");
-                    System.out.println("4 - Display every player's fielding stats.");
-                    System.out.println("5 - Return to the main screen.");
-                    request = scan.nextInt();
-                    switch (request) {
-                        case 1:
-                        queryPlayerTest();    
-                        break;    
-                        case 2:
-                        queryPitchingStatsTest();    
-                        break;
-                        case 3:
-                        queryBattingStatsTest();
-                        break;
-                        case 4:
-                        queryFieldingStatsTest();
-                        break;
-                        case 5:
-                        state = 0;
-                        break;
-                        case default:
-                        System.out.println("Please enter a valid number.");
-                }
-                while (state == 2) {
-                    System.out.println("Please enter a number 1, 2, 3, 4 or 5 to:");
-                    System.out.println("1 - Display every team's name and abbreviation.");
-                    System.out.println("2 - Display every team's pitching stats.");
-                    System.out.println("3 - Display every team's batting stats.");
-                    System.out.println("4 - Display every team's fielding stats.");
-                    System.out.println("5 - Return to the main screen.");
-                    request = scan.nextInt();
-                    switch (request) {
-                        case 1:
-                        queryTeamTest();    
-                        break;    
-                        case 2:
-                        queryTeamPitchingTest();    
-                        break;
-                        case 3:
-                        queryTeamBattingTest();
-                        break;
-                        case 4:
-                        queryTeamFieldingTest();
-                        break;
-                        case 5:
-                        state = 0;
-                        break;
-                        case default:
-                        System.out.println("Please enter a valid number."); 
-                }
-            }
+        bdb.run();
     }
 }
 
@@ -116,23 +30,68 @@ class BaseballDB {
         teamMap = new HashMap<>();
 
         connect();
-        createDB();
-        populateDB();
+        // createDB();
+        // populateDB();
     }
 
-    // runs the DB (incomplete)
+    // runs the DB
     public void run() {
-        queryTeamTest();
-        queryTeamPitchingTest();
-        queryTeamBattingTest();
-        queryTeamFieldingTest();
-        queryManagerTest();
-        queryPlayerTest();
-        queryPitchingStatsTest();
-        queryBattingStatsTest();
-        queryFieldingStatsTest();
-        queryPlaysOnTest();
+        runInterface();
     }
+
+    private void runInterface() {
+        Scanner console = new Scanner(System.in);
+		String[] parts;
+		String arg = "";
+        String prompt = "MLB DB > ";
+
+        System.out.println("Welcome to the MLB Database! Type h for help. ");
+        System.out.print(prompt);
+        String line = console.nextLine();
+
+		while (line != null && !line.equals("q")) {
+			parts = line.split(" ");
+			if (line.indexOf(" ") > 0)
+				arg = line.substring(line.indexOf(" ")).trim();
+
+			if (parts[0].equals("h")) {
+                printHelp();
+            } else if (parts[0].equals("t")) {
+				showTeamInfo();
+			} else if (parts[0].equals("allPlayers")) {
+                showAllPlayers();
+            } else if (parts[0].equals("divs")) {
+                showAllDivision();
+            } else if (parts[0].equals("pitchingStats")) {
+                if(parts.length >= 2) {
+                    showPitchingStats(arg);
+                } else {
+                    System.out.println("This command requires an argument");
+                }
+                
+            }
+
+			System.out.print("\n\n"+prompt);
+			line = console.nextLine();
+		}
+
+		console.close();
+	}
+
+    private static void printHelp() {
+		System.out.println("Commands:");
+		System.out.println("h - Get help");
+		System.out.println("t - show team information");
+        System.out.println("allPlayers - show all players");
+        System.out.println("divs - show all divisions");
+        System.out.println("pitchingStats <playerName> - show players pitching stats");
+
+		
+		System.out.println("");
+
+		System.out.println("q - Exit the program");
+		System.out.println("---- end help ----- ");
+	}
 
     // Connect to your database.
     private void connect() {
@@ -437,7 +396,7 @@ class BaseballDB {
         }
     }
 
-    // RUN QUERY METHODS
+    // TEST QUERY METHODS
     private void queryTeamTest() {
         System.out.println("\nTeam Query\n");
         try {
@@ -630,7 +589,7 @@ class BaseballDB {
 
     private int queryPlayerID(String name) {
         try {
-            String selectSql = String.format("SELECT playerID from player where CONVERT(VARCHAR(50), player.name) = '%s';", name);    
+            String selectSql = String.format("SELECT playerID from player where player.name = '%s';", name);    
             ResultSet resultSet = statement.executeQuery(selectSql);
             return resultSet.next() ? resultSet.getInt("playerID") : -1;
         }
@@ -643,7 +602,7 @@ class BaseballDB {
 
     private int queryTeamID(String identifier) {
         try {
-            String selectSql = String.format("SELECT teamID from team where CONVERT(VARCHAR, team.teamName) = '%s' or CONVERT(VARCHAR, team.abbrev) = '%s';", identifier, identifier);    
+            String selectSql = String.format("SELECT teamID from team where team.teamName = '%s' or team.abbrev = '%s';", identifier, identifier);    
             ResultSet resultSet = statement.executeQuery(selectSql);
             return resultSet.next() ? resultSet.getInt("teamID") : -1;
         }
@@ -653,6 +612,84 @@ class BaseballDB {
             return -1;
         }
     }
+
+    // INTERFACE QUERIES
+    private void showTeamInfo() {
+        try {
+            // Create and execute a SELECT SQL statement.
+            String selectSql = "select teamName, abbrev, city, divisionName from team order by teamName;";
+            ResultSet resultSet = statement.executeQuery(selectSql);
+
+            // Print results from select statement
+            System.out.printf("%-30s %-10s %-20s %-10s\n", "Team Name", "Abbrev", "City", "Divison");
+            while (resultSet.next()) {
+                System.out.printf("%-30s %-10s %-20s %-10s\n", resultSet.getString("teamName"), resultSet.getString("abbrev"), resultSet.getString("city"), resultSet.getString("divisionName"));
+            }
+        }
+        catch(Exception e) {
+            System.out.println("query failed");
+            // e.printStackTrace();
+        }
+    }
+    private void showAllPlayers() {
+        try {
+            // Create and execute a SELECT SQL statement.
+            String selectSql = "select name, age from player order by name;";
+            ResultSet resultSet = statement.executeQuery(selectSql);
+
+            // Print results from select statement
+            System.out.printf("%-32s %s\n", "Name", "Age");
+            while (resultSet.next()) {
+                System.out.printf("%-32s %d\n", resultSet.getString("name"), resultSet.getInt("age"));
+            }
+        }
+        catch(Exception e) {
+            System.out.println("query failed");
+            e.printStackTrace();
+        }
+    }
+    private void showAllDivision() {
+        try {
+            // Create and execute a SELECT SQL statement.
+            String selectSql = "select * from division order by divisionName;";
+            ResultSet resultSet = statement.executeQuery(selectSql);
+
+            // Print results from select statement
+            System.out.printf("%-35s %s\n", "Division Name", "Abbrev");
+            while (resultSet.next()) {
+                System.out.printf("%-35s %s\n", resultSet.getString("divisionName"), resultSet.getString("abbreviation"));
+            }
+        }
+        catch(Exception e) {
+            System.out.println("query failed");
+            e.printStackTrace();
+        }
+    }
+    private void showPitchingStats(String name) {
+        try {
+            // Create and execute a SELECT SQL statement.
+            String selectSql = String.format("select player.name, teamAbbrev, gamesPlayed, hitsAllowed, hrAllowed, walksAllowed, strikeOuts, inningsPitched, earnedRuns from pitchingStats "+
+            "join player on pitchingStats.playerID = player.playerID where player.name = '%s';", name);
+            ResultSet resultSet = statement.executeQuery(selectSql);
+
+            // Print results from select statement
+            System.out.printf("%-35s %-5s %-15s %-15s %-15s %-15s %-15s %-15s %-15s\n",
+                             "Name", "Team", "Games Played", "Hits Allowed", "HR Allowed", "Walks Allowed", "Strike Outs", "IP", "ER");
+            if (resultSet.next()) {
+                System.out.printf("%-35s %-5s %-15d %-15d %-15d %-15d %-15d %-15d %-15d\n", 
+                    resultSet.getString("name"), resultSet.getString("teamAbbrev"), resultSet.getInt("gamesPlayed"),
+                    resultSet.getInt("hitsAllowed"), resultSet.getInt("hrAllowed"), resultSet.getInt("walksAllowed"),
+                    resultSet.getInt("strikeOuts"), resultSet.getInt("inningsPitched"), resultSet.getInt("earnedRuns"));
+            } else {
+                System.out.println("Player not found");
+            }
+        }
+        catch(Exception e) {
+            System.out.println("query failed");
+            e.printStackTrace();
+        }
+    }
+
 
     // Helper Methods
     private int stoi(String s) {
