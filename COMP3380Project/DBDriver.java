@@ -7,13 +7,99 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Scanner;
 import java.util.*;
 
 public class DBDriver {
     
     public static void main(String[] args) {
         BaseballDB bdb = new BaseballDB();
-        bdb.run();
+        Scanner scan = new Scanner(System.in)
+        int state = 0, request;
+        while (state != 3) {
+                while (state == 0) {
+                    System.out.println("Please enter a number 1, 2, 3, 4 or 5 to:");
+                    System.out.println("1 - Display the team-based search options.");
+                    System.out.println("2 - Display the player-based search options.");
+                    System.out.println("3 - Display the list of players with their respective teams.");
+                    System.out.println("4 - Display the list of managers with the IDs of their respective teams.");
+                    System.out.println("5 - Exit the program.");
+                    request = scan.nextInt();
+                    switch (request) {
+                        case 1:
+                        state = 1;    
+                        break;    
+                        case 2:
+                        state = 2;    
+                        break;
+                        case 3:
+                        queryPlaysOnTest();
+                        break;
+                        case 4:
+                        queryManagerTest();
+                        break;
+                        case 5:
+                        state = 3;
+                        break;
+                        case default:
+                        System.out.println("Please enter a valid number.");
+                    }
+                }
+                while (state == 1) {
+                    System.out.println("Please enter a number 1, 2, 3, 4 or 5 to:");
+                    System.out.println("1 - Display every player's ID, name and age.");
+                    System.out.println("2 - Display every player's pitching stats.");
+                    System.out.println("3 - Display every player's batting stats.");
+                    System.out.println("4 - Display every player's fielding stats.");
+                    System.out.println("5 - Return to the main screen.");
+                    request = scan.nextInt();
+                    switch (request) {
+                        case 1:
+                        queryPlayerTest();    
+                        break;    
+                        case 2:
+                        queryPitchingStatsTest();    
+                        break;
+                        case 3:
+                        queryBattingStatsTest();
+                        break;
+                        case 4:
+                        queryFieldingStatsTest();
+                        break;
+                        case 5:
+                        state = 0;
+                        break;
+                        case default:
+                        System.out.println("Please enter a valid number.");
+                }
+                while (state == 2) {
+                    System.out.println("Please enter a number 1, 2, 3, 4 or 5 to:");
+                    System.out.println("1 - Display every team's name and abbreviation.");
+                    System.out.println("2 - Display every team's pitching stats.");
+                    System.out.println("3 - Display every team's batting stats.");
+                    System.out.println("4 - Display every team's fielding stats.");
+                    System.out.println("5 - Return to the main screen.");
+                    request = scan.nextInt();
+                    switch (request) {
+                        case 1:
+                        queryTeamTest();    
+                        break;    
+                        case 2:
+                        queryTeamPitchingTest();    
+                        break;
+                        case 3:
+                        queryTeamBattingTest();
+                        break;
+                        case 4:
+                        queryTeamFieldingTest();
+                        break;
+                        case 5:
+                        state = 0;
+                        break;
+                        case default:
+                        System.out.println("Please enter a valid number."); 
+                }
+            }
     }
 }
 
